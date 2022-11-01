@@ -62,9 +62,6 @@ class RepeatedStratifiedKFoldCVSplitter(CVSplitter):
                     num_bins = 4
                     bins = np.linspace(np.min(target) - 0.1 * ptp, np.max(target) + 0.1 * ptp, num_bins + 1)
                     binned = np.digitize(target, bins) - 1
-                    unique, counts = np.unique(binned, return_counts=True)
-                    occ = dict(zip(unique, counts))
-                    log.info(f"Regression stratification: {occ}")
                     splits = self.k_fold.split(X=ids, y=binned, groups=binned)
                 else:
                     raise ValueError(f'Unsupported self.datamodule.task: {self.datamodule.task}')

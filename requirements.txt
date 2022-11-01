@@ -41,12 +41,3 @@ impyute>=0.0.8
 # --------- others --------- #
 python-dotenv>=0.21.0   # loading env variables from .env file
 rich>=12.6.0            # beautiful text formatting in terminal
-
-
-
-
-
-
-pyrootutils     # standardizing the project root setup
-pre-commit      # hooks for applying linters on commit
-pytest          # tests

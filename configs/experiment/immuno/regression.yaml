@@ -75,17 +75,6 @@ shap_bkgrd: tree_path_dependent # trn all tree_path_dependent
 num_top_features: 10
 num_examples: 200
 
-# specify here default training configuration
-defaults:
-  - _self_
-  - override /datamodule: null
-  - override /trainer: default.yaml # choose trainer from 'configs/trainer/'
-  - override /model: null
-  - override /callbacks: regular.yaml
-  - override /logger: null # many_loggers.yaml # set logger here or use command line (e.g. `python run.py logger=wandb`)
-  - override /hydra/hydra_logging: colorlog
-  - override /hydra/job_logging: colorlog
-
 datamodule:
   _target_: src.datamodules.tabular.TabularDataModule
   task: ${task}
