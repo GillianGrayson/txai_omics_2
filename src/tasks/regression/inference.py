@@ -10,14 +10,13 @@ from src.utils import utils
 import statsmodels.formula.api as smf
 import xgboost as xgb
 import plotly.graph_objects as go
-from scripts.python.routines.plot.save import save_figure
-from scripts.python.routines.plot.layout import add_layout
+from src.utils.plot.save import save_figure
+from src.utils.plot.layout import add_layout
 from src.tasks.routines import eval_regression
 from catboost import CatBoost
-from scripts.python.routines.plot.scatter import add_scatter_trace
+from src.utils.plot.scatter import add_scatter_trace
 import plotly.express as px
 from src.tasks.regression.shap import explain_shap
-from src.tasks.regression.lime import explain_lime
 from scipy.stats import mannwhitneyu
 
 
@@ -217,8 +216,6 @@ def inference(config: DictConfig):
         'target_name': target_name,
         'ids': ids
     }
-    if config.is_lime == True:
-        explain_lime(config, expl_data)
     if config.is_shap == True:
         explain_shap(config, expl_data)
 

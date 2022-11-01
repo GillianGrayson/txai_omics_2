@@ -6,8 +6,8 @@ from pathlib import Path
 import torch
 from src.utils import utils
 import plotly.graph_objects as go
-from scripts.python.routines.plot.save import save_figure
-from scripts.python.routines.plot.layout import add_layout
+from src.utils.plot.save import save_figure
+from src.utils.plot.layout import add_layout
 import plotly.express as px
 
 

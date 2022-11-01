@@ -7,9 +7,9 @@ from pathlib import Path
 import torch
 from src.utils import utils
 import plotly.graph_objects as go
-from scripts.python.routines.plot.save import save_figure
-from scripts.python.routines.plot.layout import add_layout
-from scripts.python.routines.plot.scatter import add_scatter_trace
+from src.utils.plot.save import save_figure
+from src.utils.plot.layout import add_layout
+from src.utils.plot.scatter import add_scatter_trace
 import plotly.express as px
 import plotly.io as pio
 pio.kaleido.scope.mathjax = None
