@@ -198,9 +198,6 @@ class TabularDataModule(LightningDataModule):
         self.dataset_trn = Subset(self.dataset, self.ids_trn)
         self.dataset_val = Subset(self.dataset, self.ids_val)
         self.dataset_tst = Subset(self.dataset, self.ids_tst)
-        log.info(f"trn_count: {len(self.dataset_trn)}")
-        log.info(f"val_count: {len(self.dataset_val)}")
-        log.info(f"tst_count: {len(self.dataset_tst)}")
 
     def perform_split(self):
         if self.split_by == "explicit_feat":
@@ -225,9 +222,6 @@ class TabularDataModule(LightningDataModule):
                     num_bins + 1
                 )
                 binned = np.digitize(target_trn_val, bins) - 1
-                unique, counts = np.unique(binned, return_counts=True)
-                occ = dict(zip(unique, counts))
-                log.info(f"regression stratification: {occ}")
                 self.ids_trn, self.ids_val = train_test_split(
                     self.ids_trn_val,
                     test_size=self.split_trn_val[1],

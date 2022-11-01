@@ -52,7 +52,6 @@ def process_regression(config: DictConfig) -> Optional[float]:
     model_framework = model_framework_dict[config.model_type]
 
     # Init lightning datamodule
-    log.info(f"Instantiating datamodule <{config.datamodule._target_}>")
     datamodule: TabularDataModule = hydra.utils.instantiate(config.datamodule)
     datamodule.perform_split()
     feature_names = datamodule.get_feature_names()
@@ -152,7 +151,6 @@ def process_regression(config: DictConfig) -> Optional[float]:
             trainer: Trainer = hydra.utils.instantiate(
                 config.trainer, callbacks=callbacks, logger=loggers, _convert_="partial"
             )
-            log.info("Logging hyperparameters!")
             utils.log_hyperparameters_pytorch(
                 config=config,
                 model=model,
@@ -162,7 +160,6 @@ def process_regression(config: DictConfig) -> Optional[float]:
                 logger=loggers,
             )
         elif model_framework == "stand_alone":
-            log.info("Logging hyperparameters!")
             utils.log_hyperparameters_stand_alone(
                 config=config,
                 logger=loggers,
