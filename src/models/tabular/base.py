@@ -9,7 +9,7 @@ import shap
 import pandas as pd
 
 
-def get_model_framework():
+def get_model_framework_dict():
     model_framework = {
         "elastic_net": "stand_alone",
         "xgboost": "stand_alone",
