@@ -1,8 +1,8 @@
 # --------- pytorch --------- #
 torch>=1.10.0
 torchvision>=0.11.0
-pytorch-lightning==1.7.1
-torchmetrics==0.10.0
+pytorch-lightning==1.6.4
+torchmetrics==0.9.1
 
 # --------- hydra --------- #
 hydra-core==1.2.0
@@ -10,14 +10,32 @@ hydra-colorlog==1.2.0
 hydra-optuna-sweeper==1.2.0
 
 # --------- loggers --------- #
-# wandb
-# neptune-client
-# mlflow
-# comet-ml
+wandb==0.11.2
+
+# --------- models --------- #
+scikit-learn>=1.0.2
+einops==0.4.1
+pytorch-tabnet==3.1.1
+pytorch-widedeep==1.1.1
+
+# --------- XAI --------- #
+shap==0.39.0
+
+# --------- figures --------- #
+plotly>=5.7.0
+matplotlib>=3.5.2
+seaborn>=0.11.2
+kaleido>=0.2.1
+
+# --------- dataframes --------- #
+pandas>=1.4.2
+openpyxl>=3.0.9
+
+# --------- imputation --------- #
+impyute>=0.0.8
 
 # --------- others --------- #
+rich>=12.6.0            # beautiful text formatting in terminal
 pyrootutils     # standardizing the project root setup
 pre-commit      # hooks for applying linters on commit
-rich            # beautiful text formatting in terminal
 pytest          # tests
-# sh            # for running bash commands in some tests (linux/macos only)
