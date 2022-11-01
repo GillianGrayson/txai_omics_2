@@ -1,3 +1,5 @@
+# @package _global_
+
 # Available types of models:
 # elastic_net (stand_alone)
 # xgboost (stand_alone)
@@ -32,12 +34,12 @@ project_name: ${model_type}
 
 seed: 1337
 
-in_dim: 46 # number of input features
+in_dim: 10 # number of input features
 out_dim: 1 # output dimension (can be more than 1 in multiclass classification problem)
 
 cv_is_split: True
 cv_n_splits: 5
-cv_n_repeats: 5
+cv_n_repeats: 1
 
 optimized_metric: mean_absolute_error
 optimized_mean: cv_mean
@@ -80,23 +82,23 @@ defaults:
   - override /trainer: default.yaml # choose trainer from 'configs/trainer/'
   - override /model: null
   - override /callbacks: regular.yaml
-  - override /logger: many_loggers.yaml # set logger here or use command line (e.g. `python run.py logger=wandb`)
+  - override /logger: null # many_loggers.yaml # set logger here or use command line (e.g. `python run.py logger=wandb`)
   - override /hydra/hydra_logging: colorlog
   - override /hydra/job_logging: colorlog
 
 datamodule:
   _target_: src.datamodules.tabular.TabularDataModule
   task: ${task}
-  feats_con_fn: "${data_dir}/feats_con_top10.xlsx"
+  feats_con_fn: "${data_dir}/feats_con_${in_dim}.xlsx"
   feats_cat_fn: null
   feats_cat_encoding: label
   feats_cat_embed_dim: ${embed_dim}
   target: ${target}
   target_classes_fn: null
-  data_fn: "${data_dir}/global_data/df_type(minmax_left(0.05)_right(0.95)_combat)_ctrl(550)_imp(fast_knn)_replace(quarter).xlsx" # "${data_dir}/260_imp(fast_knn)_replace(quarter).xlsx"
+  data_fn: "${data_dir}/${task}.xlsx"
   data_index: index
   data_imputation: fast_knn
-  split_by: trn_val
+  split_by: trn_val # Options: [trn_val, top_feat, explicit_feat]
   split_trn_val: [0.80, 0.20]
   split_top_feat: null
   split_explicit_feat: Split
@@ -113,6 +115,23 @@ trainer:
   weights_summary: null
   progress_bar_refresh_rate: 0 #10
   resume_from_checkpoint: null
+
+callbacks:
+  model_checkpoint:
+    monitor: "val/${optimized_metric}_pl" # name of the logged metric which determines when model is improving
+    mode: ${direction} # can be "max" or "min"
+    save_top_k: 1 # save k best models (determined by above metric)
+    save_last: False # additionally always save model from last epoch
+    verbose: False
+    dirpath: ""
+    filename: "best"
+    auto_insert_metric_name: False
+
+  early_stopping:
+    monitor: "val/${optimized_metric}_pl" # name of the logged metric which determines when model is improving
+    mode: ${direction} # can be "max" or "min"
+    patience: ${patience} # how many epochs of not improving until training stops
+    min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
 
 model:
   type: ${model_type}
@@ -712,31 +731,6 @@ nbm_spam_nbm:
   output_penalty: 0.0
   polynomial: null
 
-arm_net_models:
-  _target_: src.models.tabular.arm_net.models.ARMNetModels
-  task: ${task}
-  loss_type: "L1Loss"
-  input_dim: ${in_dim}
-  output_dim: ${out_dim}
-  optimizer_lr: 0.01
-  optimizer_weight_decay: 0.0
-  scheduler_step_size: 100
-  scheduler_gamma: 0.8
-  model: xdfm # model type: lr, fm, hofm, afm, dcn, cin, afn, armnet, armnet_1h, dnn, gcn, gat, wd, ipnn, kpnn, nfm, dfm, dcn+, xdfm, gc_arm, sa_glu
-  nfeat: ${in_dim} # the number of features
-  nfield: ${in_dim} # the number of fields
-  nemb: 4 # nemb
-  k: 3 # interaction order for hofm/dcn/cin/gcn/gat/xdfm
-  h: 50 # afm/cin/afn/armnet/gcn/gat hidden features/neurons
-  mlp_nlayer: 2 # the number of mlp layers
-  mlp_nhid: 100 # mlp hidden units
-  dropout: 0.0 # dropout rate
-  nattn_head: 4 # the number of attention heads, gat/armnet
-  ensemble: False # to ensemble with DNNs
-  dnn_nlayer: 2 # the number of mlp layers
-  dnn_nhid: 100 # mlp hidden units
-  alpha: 1.7 # entmax alpha to control sparsity
-
 danet:
   _target_: src.models.tabular.danet.danet.DANetModel
   task: ${task}
@@ -775,34 +769,3 @@ nam:
   use_dnn: False
   num_units: null
 
-stg:
-  _target_: src.models.tabular.stg.stg.StochasticGatesModel
-  task: ${task}
-  loss_type: "L1Loss"
-  input_dim: ${in_dim}
-  output_dim: ${out_dim}
-  optimizer_lr: 0.034113562219535036
-  optimizer_weight_decay: 0.0
-  scheduler_step_size: 100
-  scheduler_gamma: 0.8
-  hidden_dims: [100, 50]
-  activation: 'selu'
-  sigma: 0.23518779410414542
-  lam: 0.029362490045525522
-
-callbacks:
-  model_checkpoint:
-    monitor: "val/${optimized_metric}_pl" # name of the logged metric which determines when model is improving
-    mode: ${direction} # can be "max" or "min"
-    save_top_k: 1 # save k best models (determined by above metric)
-    save_last: False # additionally always save model from last epoch
-    verbose: False
-    dirpath: ""
-    filename: "best"
-    auto_insert_metric_name: False
-
-  early_stopping:
-    monitor: "val/${optimized_metric}_pl" # name of the logged metric which determines when model is improving
-    mode: ${direction} # can be "max" or "min"
-    patience: ${patience} # how many epochs of not improving until training stops
-    min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
