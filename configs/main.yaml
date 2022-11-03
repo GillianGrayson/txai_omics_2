@@ -7,7 +7,7 @@ defaults:
   - model: null
   - datamodule: null
   - callbacks: null
-  - logger: null
+  - logger: none
 
   - experiment: null
   - hparams_search: null
