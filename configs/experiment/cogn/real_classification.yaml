@@ -1,0 +1,779 @@
+# @package _global_
+
+# Available types of models:
+# logistic_regression (stand_alone)
+# svm (stand_alone)
+# xgboost (stand_alone)
+# catboost (stand_alone)
+# lightgbm (stand_alone)
+# widedeep_tab_mlp (pytorch)
+# widedeep_tab_resnet (pytorch)
+# widedeep_tab_net (pytorch)
+# widedeep_tab_transformer (pytorch)
+# widedeep_ft_transformer (pytorch)
+# widedeep_saint (pytorch)
+# widedeep_tab_fastformer (pytorch)
+# widedeep_tab_perceiver (pytorch)
+# pytorch_tabular_autoint (pytorch)
+# pytorch_tabular_tabnet (pytorch)
+# pytorch_tabular_node (pytorch)
+# pytorch_tabular_category_embedding (pytorch)
+# pytorch_tabular_ft_transformer (pytorch)
+# pytorch_tabular_tab_transformer (pytorch)
+# nbm_spam_spam (pytorch)
+# nbm_spam_nam (pytorch)
+# nbm_spam_nbm (pytorch)
+# danet (pytorch)
+# nam (pytorch)
+
+data_type: cogn # Data type. Options: [immuno, dnam, cogn]. This is experiment config for the "cogn".
+movement_type: real # Movement type task for cogn data.
+task: classification # Task type. Options: [regression, classification]. For "immuno" data_type only regression available.
+model_type: widedeep_tab_mlp # Model type. All options are described in the beginning of the file.
+target: class_simp # Target column name. Here we perform classification between left and right.
+
+project_name: ${model_type}
+
+seed: 1337
+
+in_dim: 320 # number of input features
+out_dim: 2 # output dimension (can be more than 1 in multiclass classification problem)
+
+cv_is_split: False
+cv_n_splits: 5
+cv_n_repeats: 1
+
+optimized_metric: "accuracy_weighted"
+optimized_mean: ""
+optimized_part: val
+direction: max
+
+embed_dim: 16
+
+is_shuffle: True
+
+debug: False
+print_config: False
+print_model: False
+ignore_warnings: True
+test_after_training: True
+
+max_epochs: 1000
+patience: 100
+
+base_dir: "${hydra:runtime.cwd}/data/${data_type}/${movement_type}"
+data_dir: "${base_dir}"
+work_dir: "${base_dir}/models/${project_name}"
+
+feature_importance: none # Feature importance calculation method. Options: [none, shap_deep, shap_kernel, shap_tree, native]
+
+# SHAP values
+is_shap: False # True False
+is_shap_save: False
+shap_explainer: Tree # Tree Kernel Deep
+shap_bkgrd: tree_path_dependent # trn all tree_path_dependent
+
+# Plot params
+num_top_features: 10
+num_examples: 10
+
+datamodule:
+  _target_: src.datamodules.tabular.TabularDataModule
+  task: ${task}
+  feats_con_fn: "${data_dir}/feats_con_${in_dim}.xlsx"
+  feats_cat_fn: null
+  feats_cat_encoding: label
+  feats_cat_embed_dim: ${embed_dim}
+  target: ${target}
+  target_classes_fn: "${data_dir}/classes.xlsx"
+  data_fn: "${data_dir}/data.xlsx"
+  data_index: index
+  data_imputation: fast_knn
+  split_by: explicit_feat # Options: [trn_val, top_feat, explicit_feat]
+  split_trn_val: [0.80, 0.20]
+  split_top_feat: null
+  split_explicit_feat: Split
+  batch_size: 512
+  num_workers: 0
+  pin_memory: False
+  seed: ${seed}
+  weighted_sampler: True
+
+trainer:
+  _target_: pytorch_lightning.Trainer
+  gpus: 1
+  min_epochs: 1
+  max_epochs: ${max_epochs}
+  weights_summary: null
+  progress_bar_refresh_rate: 10
+  resume_from_checkpoint: null
+
+callbacks:
+  model_checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    monitor: "val/${optimized_metric}_pl" # name of the logged metric which determines when model is improving
+    mode: ${direction} # can be "max" or "min"
+    save_top_k: 1 # save k best models (determined by above metric)
+    save_last: False # additionaly always save model from last epoch
+    verbose: False
+    dirpath: ""
+    filename: "best"
+    auto_insert_metric_name: False
+
+  early_stopping:
+    _target_: pytorch_lightning.callbacks.EarlyStopping
+    monitor: "val/${optimized_metric}_pl" # name of the logged metric which determines when model is improving
+    mode: ${direction} # can be "max" or "min"
+    patience: ${patience} # how many epochs of not improving until training stops
+    min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
+
+model:
+  type: ${model_type}
+
+xgboost:
+  output_dim: ${out_dim}
+  booster: 'gbtree'
+  learning_rate: 0.01
+  max_depth: 6
+  gamma: 0
+  sampling_method: 'uniform'
+  subsample: 1
+  objective: 'multi:softprob'
+  verbosity: 0
+  eval_metric: 'mlogloss'
+  max_epochs: ${max_epochs}
+  patience: ${patience}
+
+catboost:
+  output_dim: ${out_dim}
+  loss_function: 'MultiClass'
+  learning_rate: 0.01
+  depth: 4
+  min_data_in_leaf: 10
+  max_leaves: 31
+  task_type: 'CPU'
+  verbose: 0
+  max_epochs: ${max_epochs}
+  patience: ${patience}
+
+lightgbm:
+  output_dim: ${out_dim}
+  objective: 'multiclass'
+  boosting: 'gbdt'
+  learning_rate: 0.02
+  num_leaves: 31
+  device: 'cpu'
+  max_depth: -1
+  min_data_in_leaf: 10
+  feature_fraction: 0.9
+  bagging_fraction: 0.8
+  bagging_freq: 5
+  verbose: -1
+  metric: 'multi_logloss'
+  max_epochs: ${max_epochs}
+  patience: ${patience}
+
+logistic_regression:
+  penalty: "elasticnet"
+  l1_ratio: 0.5
+  C: 1.0
+  multi_class: "multinomial"
+  solver: "saga"
+  max_iter: 100
+  tol: 1e-4
+  verbose: 0
+
+svm:
+  C: 1.0
+  kernel: "rbf"
+  decision_function_shape: "ovr"
+  max_iter: -1
+  tol: 1e-2
+  verbose: 0
+
+widedeep_tab_mlp:
+  _target_: src.models.tabular.widedeep.tab_mlp.WDTabMLPModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.01
+  optimizer_weight_decay: 0.0
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  column_idx: null
+  cat_embed_input: null
+  cat_embed_dropout: 0.1
+  use_cat_bias: False
+  cat_embed_activation: null
+  continuous_cols: null
+  cont_norm_layer: "batchnorm"
+  embed_continuous: False
+  cont_embed_dim: 16
+  cont_embed_dropout: 0.1
+  use_cont_bias: True
+  cont_embed_activation: null
+  mlp_hidden_dims:
+  - 200
+  - 100
+  - ${out_dim}
+  mlp_activation: 'relu'
+  mlp_dropout: 0.1
+  mlp_batchnorm: False
+  mlp_batchnorm_last: False
+  mlp_linear_first: False
+
+widedeep_tab_resnet:
+  _target_: src.models.tabular.widedeep.tab_resnet.WDTabResnetModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.07
+  optimizer_weight_decay: 0.0
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  column_idx: null
+  cat_embed_input: null
+  cat_embed_dropout: 0.1
+  use_cat_bias: False
+  cat_embed_activation: null
+  continuous_cols: null
+  cont_norm_layer: "batchnorm"
+  embed_continuous: False
+  cont_embed_dim: 16
+  cont_embed_dropout: 0.1
+  use_cont_bias: True
+  cont_embed_activation: null
+  blocks_dims:
+  - 200
+  - 100
+  - 100
+  - ${out_dim}
+  blocks_dropout: 0.1
+  simplify_blocks: False
+  mlp_hidden_dims: null
+  mlp_activation: 'relu'
+  mlp_dropout: 0.1
+  mlp_batchnorm: False
+  mlp_batchnorm_last: False
+  mlp_linear_first: False
+
+widedeep_tab_net:
+  _target_: src.models.tabular.widedeep.tab_net.WDTabNetModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.12476988667170572
+  optimizer_weight_decay: 1.216983116182198e-07
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  column_idx: null
+  cat_embed_input: null
+  cat_embed_dropout: 0.1
+  use_cat_bias: False
+  cat_embed_activation: null
+  continuous_cols: null
+  cont_norm_layer: "batchnorm"
+  embed_continuous: False
+  cont_embed_dim: 16
+  cont_embed_dropout: 0.1
+  use_cont_bias: True
+  cont_embed_activation: null
+  n_steps: 2
+  attn_dim: 20
+  dropout: 0.028354475497966526
+  n_glu_step_dependent: 1
+  n_glu_shared: 4
+  ghost_bn: True
+  virtual_batch_size: 128
+  momentum: 0.1068950240822053
+  gamma: 1.1677939635640748
+  epsilon: 1e-15
+  mask_type: "entmax"
+
+widedeep_tab_transformer:
+  _target_: src.models.tabular.widedeep.tab_transformer.WDTabTransformerModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.001
+  optimizer_weight_decay: 0.0
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  column_idx: null
+  cat_embed_input: null
+  cat_embed_dropout: 0.1
+  use_cat_bias: False
+  cat_embed_activation: null
+  full_embed_dropout: False
+  shared_embed: False
+  add_shared_embed: False
+  frac_shared_embed: 0.25
+  continuous_cols: null
+  cont_norm_layer: null
+  embed_continuous: True
+  cont_embed_dropout: 0.1
+  use_cont_bias: True
+  cont_embed_activation: null
+  embed_dim: ${embed_dim}
+  n_heads: 8
+  use_qkv_bias: False
+  n_blocks: 4
+  attn_dropout: 0.2
+  ff_dropout: 0.1
+  transformer_activation: "gelu"
+  mlp_hidden_dims:
+    - 200
+    - 100
+    - ${out_dim}
+  mlp_activation: "relu"
+  mlp_dropout: 0.1
+  mlp_batchnorm: False
+  mlp_batchnorm_last: False
+  mlp_linear_first: True
+
+widedeep_ft_transformer:
+  _target_: src.models.tabular.widedeep.ft_transformer.WDFTTransformerModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.009394510896784777
+  optimizer_weight_decay: 0.0
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  column_idx: null
+  cat_embed_input: null
+  cat_embed_dropout: 0.1
+  use_cat_bias: False
+  cat_embed_activation: null
+  full_embed_dropout: False
+  shared_embed: False
+  add_shared_embed: False
+  frac_shared_embed: 0.25
+  continuous_cols: null
+  cont_norm_layer: null
+  cont_embed_dropout: 0.1
+  use_cont_bias: True
+  cont_embed_activation: null
+  embed_dim: 64
+  kv_compression_factor: 0.5
+  kv_sharing: False
+  use_qkv_bias: False
+  n_heads: 16
+  n_blocks: 2
+  attn_dropout: 0.2
+  ff_dropout: 0.2
+  transformer_activation: "reglu"
+  ff_factor: 1.33
+  mlp_hidden_dims:
+    - 200
+    - 100
+    - 50
+    - ${out_dim}
+  mlp_activation: "relu"
+  mlp_dropout: 0.05
+  mlp_batchnorm: False
+  mlp_batchnorm_last: False
+  mlp_linear_first: True
+
+widedeep_saint:
+  _target_: src.models.tabular.widedeep.saint.WDSAINTModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.001
+  optimizer_weight_decay: 0.0
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  column_idx: null
+  cat_embed_input: null
+  cat_embed_dropout: 0.1
+  use_cat_bias: False
+  cat_embed_activation: null
+  full_embed_dropout: False
+  shared_embed: False
+  add_shared_embed: False
+  frac_shared_embed: 0.25
+  continuous_cols: null
+  cont_norm_layer: null
+  cont_embed_dropout: 0.1
+  use_cont_bias: True
+  cont_embed_activation: null
+  embed_dim: 8
+  use_qkv_bias: False
+  n_heads: 2
+  n_blocks: 3
+  attn_dropout: 0.1
+  ff_dropout: 0.2
+  transformer_activation: "gelu"
+  mlp_hidden_dims:
+    - 200
+    - 100
+    - 50
+    - ${out_dim}
+  mlp_activation: "relu"
+  mlp_dropout: 0.1
+  mlp_batchnorm: False
+  mlp_batchnorm_last: False
+  mlp_linear_first: True
+
+widedeep_tab_fastformer:
+  _target_: src.models.tabular.widedeep.tab_fastformer.WDTabFastFormerModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.001
+  optimizer_weight_decay: 0.0
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  column_idx: null
+  cat_embed_input: null
+  cat_embed_dropout: 0.1
+  use_cat_bias: False
+  cat_embed_activation: null
+  full_embed_dropout: False
+  shared_embed: False
+  add_shared_embed: False
+  frac_shared_embed: 0.25
+  continuous_cols: null
+  cont_norm_layer: null
+  cont_embed_dropout: 0.1
+  use_cont_bias: True
+  cont_embed_activation: null
+  embed_dim: ${embed_dim}
+  n_heads: 8
+  use_bias: False
+  n_blocks: 4
+  attn_dropout: 0.2
+  ff_dropout: 0.1
+  share_qv_weights: False
+  share_weights: False
+  transformer_activation: "relu"
+  mlp_hidden_dims:
+    - 100
+    - ${out_dim}
+  mlp_activation: "relu"
+  mlp_dropout: 0.1
+  mlp_batchnorm: False
+  mlp_batchnorm_last: False
+  mlp_linear_first: True
+
+widedeep_tab_perceiver:
+  _target_: src.models.tabular.widedeep.tab_perceiver.WDTabPerceiverModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.001
+  optimizer_weight_decay: 0.0
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  column_idx: null
+  cat_embed_input: null
+  cat_embed_dropout: 0.1
+  use_cat_bias: False
+  cat_embed_activation: null
+  full_embed_dropout: False
+  shared_embed: False
+  add_shared_embed: False
+  frac_shared_embed: 0.25
+  continuous_cols: null
+  cont_norm_layer: null
+  cont_embed_dropout: 0.1
+  use_cont_bias: True
+  cont_embed_activation: null
+  embed_dim: ${embed_dim}
+  n_cross_attns: 1
+  n_cross_attn_heads:  4
+  n_latents: 16
+  latent_dim: 128
+  n_latent_heads: 4
+  n_latent_blocks: 4
+  n_perceiver_blocks: 4
+  share_weights: False
+  attn_dropout: 0.1
+  ff_dropout: 0.1
+  transformer_activation: "geglu"
+  mlp_hidden_dims:
+    - 100
+    - ${out_dim}
+  mlp_activation: "relu"
+  mlp_dropout: 0.1
+  mlp_batchnorm: False
+  mlp_batchnorm_last: False
+  mlp_linear_first: True
+
+pytorch_tabular_autoint:
+  _target_: src.models.tabular.pytorch_tabular.autoint.PTAutoIntModel
+  task: ${task}
+  loss_type: CrossEntropyLoss
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.00992093303237566
+  optimizer_weight_decay: 2.472886647072828e-06
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  embedding_dims: null
+  continuous_cols: null
+  categorical_cols: null
+  attn_embed_dim: 64
+  num_heads: 1
+  num_attn_blocks: 1
+  attn_dropouts: 0.1
+  has_residuals: true
+  embedding_dim: 64
+  embedding_dropout: 0.1
+  deep_layers: true
+  layers: 128-64-32
+  activation: ReLU
+  dropout: 0.0
+  use_batch_norm: false
+  batch_norm_continuous_input: false
+  attention_pooling: false
+  initialization: kaiming
+
+pytorch_tabular_tabnet:
+  _target_: src.models.tabular.pytorch_tabular.tabnet.PTTabNetModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.01
+  optimizer_weight_decay: 0.0
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  embedding_dims: null
+  continuous_cols: null
+  categorical_cols: null
+  n_d: 8
+  n_a: 8
+  n_steps: 3
+  gamma: 1.3
+  n_independent: 1
+  n_shared: 2
+  virtual_batch_size: 128
+  mask_type: "sparsemax"
+
+pytorch_tabular_node:
+  _target_: src.models.tabular.pytorch_tabular.node.PTNODEModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.2
+  optimizer_weight_decay: 0.0
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  embedding_dims: null
+  continuous_cols: null
+  categorical_cols: null
+  num_layers: 1
+  num_trees: 512
+  additional_tree_output_dim: 4
+  depth: 6
+  choice_function: "entmax15"
+  bin_function: "sparsemoid"
+  max_features: null
+  input_dropout: 0.0
+  initialize_response: "normal"
+  initialize_selection_logits: "uniform"
+  threshold_init_beta: 1.0
+  threshold_init_cutoff: 1.0
+  embed_categorical: False
+  embedding_dropout: 0.0
+
+pytorch_tabular_category_embedding:
+  _target_: src.models.tabular.pytorch_tabular.category_embedding.PTCategoryEmbeddingModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.05
+  optimizer_weight_decay: 0.0
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  embedding_dims: null
+  continuous_cols: null
+  categorical_cols: null
+  layers: "128-64-32"
+  batch_norm_continuous_input: True
+  activation: "ReLU"
+  embedding_dropout: 0.5
+  dropout: 0.5
+  use_batch_norm: False
+  initialization: "kaiming"
+
+pytorch_tabular_ft_transformer:
+  _target_: src.models.tabular.pytorch_tabular.ft_transformer.PTFTTransformerModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.05
+  optimizer_weight_decay: 0.0
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  embedding_dims: null
+  continuous_cols: null
+  categorical_cols: null
+  input_embed_dim: 32
+  embedding_initialization: "kaiming_uniform"
+  embedding_bias: True
+  embedding_dropout: 0.1
+  share_embedding: False
+  share_embedding_strategy: "fraction"
+  shared_embedding_fraction: 0.25
+  attn_feature_importance: True
+  num_heads: 8
+  num_attn_blocks: 6
+  transformer_head_dim: null
+  attn_dropout: 0.1
+  add_norm_dropout: 0.1
+  ff_dropout: 0.1
+  ff_hidden_multiplier: 4
+  transformer_activation: "GEGLU"
+  out_ff_layers: "128-64-32"
+  out_ff_activation: "ReLU"
+  out_ff_dropout: 0.0
+  use_batch_norm: False
+  batch_norm_continuous_input: False
+  out_ff_initialization: "kaiming"
+
+pytorch_tabular_tab_transformer:
+  _target_: src.models.tabular.pytorch_tabular.tab_transformer.PTTabTransformerModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.05
+  optimizer_weight_decay: 0.0
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  embedding_dims: null
+  continuous_cols: null
+  categorical_cols: null
+  input_embed_dim: 32
+  embedding_dropout: 0.1
+  share_embedding: False
+  share_embedding_strategy: "fraction"
+  shared_embedding_fraction: 0.25
+  num_heads: 8
+  num_attn_blocks: 6
+  transformer_head_dim: null
+  attn_dropout: 0.1
+  add_norm_dropout: 0.1
+  ff_dropout: 0.1
+  ff_hidden_multiplier: 4
+  transformer_activation: "GEGLU"
+  out_ff_layers: "128-64-32"
+  out_ff_activation: "ReLU"
+  out_ff_dropout: 0.0
+  use_batch_norm: False
+  batch_norm_continuous_input: False
+  out_ff_initialization: "kaiming"
+
+nbm_spam_spam:
+  _target_: src.models.tabular.nbm_spam.spam.SPAMModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.001
+  optimizer_weight_decay: 0.0
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  ranks: []
+  dropout: 0.0
+  ignore_unary: False
+  reg_order: 2
+  lower_order_correction: False
+  use_geometric_mean: True
+  orthogonal: False
+  proximal: False
+  regularization_scale: 0.0
+  basis_l1_regularization: 0.0
+
+nbm_spam_nam:
+  _target_: src.models.tabular.nbm_spam.nam.NAMModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.001
+  optimizer_weight_decay: 0.0
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  nary: null
+  first_layer: "linear"
+  first_hidden_dim: 64
+  hidden_dims: [64, 32]
+  num_subnets: 1
+  dropout: 0.0
+  concept_dropout: 0.0
+  batchnorm: True
+  output_penalty: 0.0
+  polynomial: null
+
+nbm_spam_nbm:
+  _target_: src.models.tabular.nbm_spam.nbm.NBMModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.001
+  optimizer_weight_decay: 0.0
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  nary: null
+  num_bases: 100
+  hidden_dims: [256, 128, 128]
+  num_subnets: 1
+  dropout: 0.0
+  bases_dropout: 0.0
+  batchnorm: True
+  output_penalty: 0.0
+  polynomial: null
+
+danet:
+  _target_: src.models.tabular.danet.danet.DANetModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.09103819498050514
+  optimizer_weight_decay: 2.1396873600065802e-05
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  layer_num: 30
+  base_outdim: 64
+  k: 7
+  virtual_batch_size: 256
+  drop_rate: 0.03479968662869476
+
+nam:
+  _target_: src.models.tabular.nam.nam.NeuralAdditiveModel
+  task: ${task}
+  loss_type: "CrossEntropyLoss"
+  input_dim: ${in_dim}
+  output_dim: ${out_dim}
+  optimizer_lr: 0.01
+  optimizer_weight_decay: 0.0
+  scheduler_step_size: 100
+  scheduler_gamma: 0.8
+  hidden_sizes: []  # [64, 32],
+  activation: 'exu'  ## Either `ExU` or `Relu`
+  dropout: 0.1
+  feature_dropout: 0.1  # 0.5,
+  decay_rate: 0.995
+  l2_regularization: 0.1
+  output_regularization: 0.1
+  num_basis_functions: 500
+  units_multiplier: 2
+  use_dnn: False
+  num_units: null
