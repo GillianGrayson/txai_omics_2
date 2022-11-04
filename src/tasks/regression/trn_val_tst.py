@@ -603,6 +603,18 @@ def process_regression(config: DictConfig) -> Optional[float]:
         fns.remove(f"{ckpt_name}_fold_{best['fold']:04d}.ckpt")
         for fn in fns:
             os.remove(fn)
+    elif model_framework == "stand_alone":
+        eval_loss(best['loss_info'], None, is_log=True, is_save=False, file_suffix=f"_best_{best['fold']:04d}")
+        if config.model_type == "xgboost":
+            best["model"].save_model(f"epoch_{best['model'].best_iteration}_best_{best['fold']:04d}.model")
+        elif config.model_type == "catboost":
+            best["model"].save_model(f"epoch_{best['model'].best_iteration_}_best_{best['fold']:04d}.model")
+        elif config.model_type == "lightgbm":
+            best["model"].save_model(f"epoch_{best['model'].best_iteration}_best_{best['fold']:04d}.model", num_iteration=best['model'].best_iteration)
+        elif config.model_type == "elastic_net":
+            pickle.dump(best["model"], open(f"elastic_net_best_{best['fold']:04d}.pkl", 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
+        else:
+            raise ValueError(f"Model {config.model_type} is not supported")
 
     y_trn = df.loc[df.index[datamodule.ids_trn], target_name].values
     y_trn_pred = df.loc[df.index[datamodule.ids_trn], "Estimation"].values
@@ -646,19 +658,6 @@ def process_regression(config: DictConfig) -> Optional[float]:
         metrics_tst = pd.concat([metrics_tst, metrics_val_tst_cv_mean.loc[:, ['tst']]])
         metrics_val.to_excel(f"metrics_val_best_{best['fold']:04d}.xlsx", index=True, index_label="metric")
         metrics_tst.to_excel(f"metrics_tst_best_{best['fold']:04d}.xlsx", index=True, index_label="metric")
-
-    elif model_framework == "stand_alone":
-        eval_loss(best['loss_info'], None, is_log=True, is_save=False, file_suffix=f"_best_{best['fold']:04d}")
-        if config.model_type == "xgboost":
-            best["model"].save_model(f"epoch_{best['model'].best_iteration}_best_{best['fold']:04d}.model")
-        elif config.model_type == "catboost":
-            best["model"].save_model(f"epoch_{best['model'].best_iteration_}_best_{best['fold']:04d}.model")
-        elif config.model_type == "lightgbm":
-            best["model"].save_model(f"epoch_{best['model'].best_iteration}_best_{best['fold']:04d}.model", num_iteration=best['model'].best_iteration)
-        elif config.model_type == "elastic_net":
-            pickle.dump(best["model"], open(f"elastic_net_best_{best['fold']:04d}.pkl", 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
-        else:
-            raise ValueError(f"Model {config.model_type} is not supported")
 
     if config.optimized_part == "trn":
         metrics_main = metrics_trn
