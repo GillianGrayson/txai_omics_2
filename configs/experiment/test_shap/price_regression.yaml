@@ -25,16 +25,16 @@
 # danet (pytorch)
 # nam (pytorch)
 
-data_type: immuno # Data type. Options: [test_shap, immuno, dnam, cogn]. This is experiment config for the "immuno".
+data_type: test_shap # Data type. Options: [test_shap, immuno, dnam, cogn]. This is experiment config for testing SHAP library with different ML models.
 task: regression # Task type. Options: [regression, classification]. For "immuno" data_type only regression available.
 model_type: lightgbm # Model type. All options are described in the beginning of the file.
-target: Age # Target column name. Here we perform regression for chronological age.
+target: Price # Target column name. Here we perform regression for chronological age.
 
 project_name: ${model_type}
 
 seed: 1337
 
-in_dim: 10 # number of input features
+in_dim: 13 # number of input features
 out_dim: 1 # output dimension (can be more than 1 in multiclass classification problem)
 
 cv_is_split: True
@@ -91,7 +91,7 @@ datamodule:
   split_trn_val: [0.80, 0.20]
   split_top_feat: null
   split_explicit_feat: Split
-  batch_size: 512
+  batch_size: 1024
   num_workers: 0
   pin_memory: False
   seed: ${seed}
