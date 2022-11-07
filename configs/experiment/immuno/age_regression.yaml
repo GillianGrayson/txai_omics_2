@@ -19,62 +19,61 @@
 # pytorch_tabular_category_embedding (pytorch)
 # pytorch_tabular_ft_transformer (pytorch)
 # pytorch_tabular_tab_transformer (pytorch)
-# nbm_spam_spam (pytorch)
-# nbm_spam_nam (pytorch)
-# nbm_spam_nbm (pytorch)
 # danet (pytorch)
 # nam (pytorch)
 
-data_type: immuno # Data type. Options: [test_shap, immuno, dnam, cogn]. This is experiment config for the "immuno".
-task: regression # Task type. Options: [regression, classification]. For "immuno" data_type only regression available.
-model_type: lightgbm # Model type. All options are described in the beginning of the file.
-target: Age # Target column name. Here we perform regression for chronological age.
+# Global params
+seed: 1337 # Random seed
+data_type: "immuno" # Data type. Options: ["test_shap", "immuno", "dnam", "cogn"]. This is experiment config for the "immuno".
+task: "regression" # Task type. Options: ["regression", "classification"]. For "test_shap" data_type only regression available.
+model_type: "lightgbm" # Model type. All options are described in the beginning of the file.
+target: "Age" # Target column name. Here we perform regression for chronological age.
 
+# Cross-validation params
+cv_is_split: True # Perform cross-validation?
+cv_n_splits: 5 # Number of splits in cross-validation.
+cv_n_repeats: 1 # Number of repeats in cross-validation.
+
+# Optimization metrics params
+optimized_metric: "mean_absolute_error" # All metrics listed in src.tasks.metrics.
+optimized_mean: "cv_mean" # Optimize mean result across all cross-validation splits? Options: ["", "cv_mean"].
+optimized_part: val # Optimized data partition. Options: ["val", "tst"].
+direction: min # Direction of metrics optimization. Options ["min", "max"].
+
+# Run params
+max_epochs: 1000 # Maximum number of epochs.
+patience: 100 # Number of early stopping epochs.
+feature_importance: none # Feature importance method. Options: [none, shap_deep, shap_kernel, shap_tree, native].
+
+# Info params
+debug: False # Is Debug?
+print_config: False # Print config?
+print_model: False # Print model info?
+ignore_warnings: True # Ignore warnings?
+test_after_training: True # Test after training?
+
+# Directories and files params
 project_name: ${model_type}
-
-seed: 1337
-
-in_dim: 10 # number of input features
-out_dim: 1 # output dimension (can be more than 1 in multiclass classification problem)
-
-cv_is_split: True
-cv_n_splits: 5
-cv_n_repeats: 1
-
-optimized_metric: mean_absolute_error
-optimized_mean: cv_mean
-optimized_part: val
-direction: min
-
-embed_dim: 16
-
-is_shuffle: False
-
-debug: False
-print_config: False
-print_model: False
-ignore_warnings: True
-test_after_training: True
-
-max_epochs: 1000
-patience: 100
-
 base_dir: "${hydra:runtime.cwd}/data/${data_type}/age_regression"
 data_dir: "${base_dir}"
 work_dir: "${base_dir}/models/${project_name}"
 
-feature_importance: none # Feature importance calculation method. Options: [none, shap_deep, shap_kernel, shap_tree, native]
-
-# SHAP values
-is_shap: True # True False
-is_shap_save: True
-shap_explainer: Tree # Tree Kernel Deep
-shap_bkgrd: tree_path_dependent # trn all tree_path_dependent
+# SHAP values params
+is_shap: False # Calculate SHAP values?
+is_shap_save: False # Save SHAP values?
+shap_explainer: "Tree" # Type of explainer. Options: ["Tree", "Kernel", "Deep"].
+shap_bkgrd: "tree_path_dependent" # Type of background data. Options: ["trn", "all", "tree_path_dependent"].
 
 # Plot params
-num_top_features: 10
-num_examples: 10
+num_top_features: 10 # Number of most important features to plot
+num_examples: 10 # Number of samples to plot some SHAP figures
 
+# Data params
+in_dim: 10 # Number of input features
+out_dim: 1 # Output dimension (can be more than 1 in multiclass classification problem)
+embed_dim: 16 # Default embedding dimension
+
+# Datamodule params
 datamodule:
   _target_: src.datamodules.tabular.TabularDataModule
   task: ${task}
@@ -97,6 +96,7 @@ datamodule:
   seed: ${seed}
   weighted_sampler: True
 
+# Trainer params
 trainer:
   _target_: pytorch_lightning.Trainer
   gpus: 1
@@ -106,6 +106,7 @@ trainer:
   progress_bar_refresh_rate: 0
   resume_from_checkpoint: null
 
+# Callbacks params
 callbacks:
   model_checkpoint:
     _target_: pytorch_lightning.callbacks.ModelCheckpoint
@@ -125,9 +126,18 @@ callbacks:
     patience: ${patience} # how many epochs of not improving until training stops
     min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
 
+# Model params
 model:
   type: ${model_type}
 
+# Elastic Net params [https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html]
+elastic_net:
+  alpha: 15.0
+  l1_ratio: 0.5
+  max_iter: 100000
+  tol: 1e-2
+
+# XGBoost params [https://xgboost.readthedocs.io/en/stable/parameter.html]
 xgboost:
   booster: 'gbtree'
   learning_rate: 0.05
@@ -141,17 +151,7 @@ xgboost:
   max_epochs: ${max_epochs}
   patience: ${patience}
 
-catboost:
-  loss_function: 'MAE'
-  learning_rate: 0.03250338619913498
-  depth: 4
-  min_data_in_leaf: 35
-  max_leaves: 31
-  task_type: 'CPU'
-  verbose: 0
-  max_epochs: ${max_epochs}
-  patience: ${patience}
-
+# LightGBM parameters [https://lightgbm.readthedocs.io/en/latest/Parameters.html]
 lightgbm:
   objective: regression
   boosting: gbdt
@@ -168,12 +168,20 @@ lightgbm:
   max_epochs: ${max_epochs}
   patience: ${patience}
 
-elastic_net:
-  alpha: 15.0
-  l1_ratio: 0.5
-  max_iter: 100000
-  tol: 1e-2
+# CatBoost params [https://catboost.ai/en/docs/references/training-parameters/]
+catboost:
+  loss_function: 'MAE'
+  learning_rate: 0.03250338619913498
+  depth: 4
+  min_data_in_leaf: 35
+  max_leaves: 31
+  task_type: 'CPU'
+  verbose: 0
+  max_epochs: ${max_epochs}
+  patience: ${patience}
 
+# Params for all adapted models from widedeep available here:
+# [https://pytorch-widedeep.readthedocs.io/en/latest/pytorch-widedeep/model_components.html]
 widedeep_tab_mlp:
   _target_: src.models.tabular.widedeep.tab_mlp.WDTabMLPModel
   task: ${task}
@@ -241,7 +249,7 @@ widedeep_tab_resnet:
   mlp_batchnorm: False
   mlp_batchnorm_last: False
   mlp_linear_first: False
-  
+
 widedeep_tab_net:
   _target_: src.models.tabular.widedeep.tab_net.WDTabNetModel
   task: ${task}
@@ -492,6 +500,8 @@ widedeep_tab_perceiver:
   mlp_batchnorm_last: False
   mlp_linear_first: True
 
+# Params for all adapted models from pytorch_tabular available here:
+# [https://github.com/manujosephv/pytorch_tabular/tree/main/pytorch_tabular/models]
 pytorch_tabular_autoint:
   _target_: src.models.tabular.pytorch_tabular.autoint.PTAutoIntModel
   task: ${task}
@@ -542,7 +552,7 @@ pytorch_tabular_tabnet:
   n_shared: 2
   virtual_batch_size: 128
   mask_type: "sparsemax"
-  
+
 pytorch_tabular_node:
   _target_: src.models.tabular.pytorch_tabular.node.PTNODEModel
   task: ${task}
@@ -661,68 +671,7 @@ pytorch_tabular_tab_transformer:
   batch_norm_continuous_input: False
   out_ff_initialization: "kaiming"
 
-nbm_spam_spam:
-  _target_: src.models.tabular.nbm_spam.spam.SPAMModel
-  task: ${task}
-  loss_type: "L1Loss"
-  input_dim: ${in_dim}
-  output_dim: ${out_dim}
-  optimizer_lr: 0.001
-  optimizer_weight_decay: 0.0
-  scheduler_step_size: 100
-  scheduler_gamma: 0.8
-  ranks: []
-  dropout: 0.0
-  ignore_unary: False
-  reg_order: 2
-  lower_order_correction: False
-  use_geometric_mean: True
-  orthogonal: False
-  proximal: False
-  regularization_scale: 0.0
-  basis_l1_regularization: 0.0
-
-nbm_spam_nam:
-  _target_: src.models.tabular.nbm_spam.nam.NAMModel
-  task: ${task}
-  loss_type: "L1Loss"
-  input_dim: ${in_dim}
-  output_dim: ${out_dim}
-  optimizer_lr: 0.001
-  optimizer_weight_decay: 0.0
-  scheduler_step_size: 100
-  scheduler_gamma: 0.8
-  nary: null
-  first_layer: "linear"
-  first_hidden_dim: 64
-  hidden_dims: [64, 32]
-  num_subnets: 1
-  dropout: 0.0
-  concept_dropout: 0.0
-  batchnorm: True
-  output_penalty: 0.0
-  polynomial: null
-  
-nbm_spam_nbm:
-  _target_: src.models.tabular.nbm_spam.nbm.NBMModel
-  task: ${task}
-  loss_type: "L1Loss"
-  input_dim: ${in_dim}
-  output_dim: ${out_dim}
-  optimizer_lr: 0.001
-  optimizer_weight_decay: 0.0
-  scheduler_step_size: 100
-  scheduler_gamma: 0.8
-  nary: null
-  num_bases: 100
-  hidden_dims: [256, 128, 128]
-  num_subnets: 1
-  dropout: 0.0
-  bases_dropout: 0.0
-  batchnorm: True
-  output_penalty: 0.0
-  polynomial: null
-
+# DANet params [https://arxiv.org/abs/2112.02962]
 danet:
   _target_: src.models.tabular.danet.danet.DANetModel
   task: ${task}
@@ -739,6 +688,7 @@ danet:
   virtual_batch_size: 256
   drop_rate: 0.03479968662869476
 
+# NAM params [https://github.com/AmrMKayid/nam]
 nam:
   _target_: src.models.tabular.nam.nam.NeuralAdditiveModel
   task: ${task}
@@ -760,4 +710,3 @@ nam:
   units_multiplier: 2
   use_dnn: False
   num_units: null
-

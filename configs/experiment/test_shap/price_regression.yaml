@@ -130,6 +130,13 @@ callbacks:
 model:
   type: ${model_type}
 
+# Elastic Net params [https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html]
+elastic_net:
+  alpha: 15.0
+  l1_ratio: 0.5
+  max_iter: 100000
+  tol: 1e-2
+
 # XGBoost params [https://xgboost.readthedocs.io/en/stable/parameter.html]
 xgboost:
   booster: 'gbtree'
@@ -141,18 +148,6 @@ xgboost:
   objective: 'reg:squarederror'
   verbosity: 0
   eval_metric: 'mae'
-  max_epochs: ${max_epochs}
-  patience: ${patience}
-
-# CatBoost params [https://catboost.ai/en/docs/references/training-parameters/]
-catboost:
-  loss_function: 'MAE'
-  learning_rate: 0.03250338619913498
-  depth: 4
-  min_data_in_leaf: 35
-  max_leaves: 31
-  task_type: 'CPU'
-  verbose: 0
   max_epochs: ${max_epochs}
   patience: ${patience}
 
@@ -173,12 +168,17 @@ lightgbm:
   max_epochs: ${max_epochs}
   patience: ${patience}
 
-# Elastic Net params [https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html]
-elastic_net:
-  alpha: 15.0
-  l1_ratio: 0.5
-  max_iter: 100000
-  tol: 1e-2
+# CatBoost params [https://catboost.ai/en/docs/references/training-parameters/]
+catboost:
+  loss_function: 'MAE'
+  learning_rate: 0.03250338619913498
+  depth: 4
+  min_data_in_leaf: 35
+  max_leaves: 31
+  task_type: 'CPU'
+  verbose: 0
+  max_epochs: ${max_epochs}
+  patience: ${patience}
 
 # Params for all adapted models from widedeep available here:
 # [https://pytorch-widedeep.readthedocs.io/en/latest/pytorch-widedeep/model_components.html]
