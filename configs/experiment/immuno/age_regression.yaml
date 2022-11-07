@@ -3,8 +3,8 @@
 # Available types of models:
 # elastic_net (stand_alone)
 # xgboost (stand_alone)
-# catboost (stand_alone)
 # lightgbm (stand_alone)
+# catboost (stand_alone)
 # widedeep_tab_mlp (pytorch)
 # widedeep_tab_resnet (pytorch)
 # widedeep_tab_net (pytorch)
@@ -37,8 +37,8 @@ cv_n_repeats: 1 # Number of repeats in cross-validation.
 # Optimization metrics params
 optimized_metric: "mean_absolute_error" # All metrics listed in src.tasks.metrics.
 optimized_mean: "cv_mean" # Optimize mean result across all cross-validation splits? Options: ["", "cv_mean"].
-optimized_part: val # Optimized data partition. Options: ["val", "tst"].
-direction: min # Direction of metrics optimization. Options ["min", "max"].
+optimized_part: "val" # Optimized data partition. Options: ["val", "tst"].
+direction: "min" # Direction of metrics optimization. Options ["min", "max"].
 
 # Run params
 max_epochs: 1000 # Maximum number of epochs.
