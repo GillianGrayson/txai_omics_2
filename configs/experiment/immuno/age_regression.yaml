@@ -59,15 +59,15 @@ test_after_training: True
 max_epochs: 1000
 patience: 100
 
-base_dir: "${hydra:runtime.cwd}/data/${data_type}"
+base_dir: "${hydra:runtime.cwd}/data/${data_type}/age_regression"
 data_dir: "${base_dir}"
 work_dir: "${base_dir}/models/${project_name}"
 
 feature_importance: none # Feature importance calculation method. Options: [none, shap_deep, shap_kernel, shap_tree, native]
 
 # SHAP values
-is_shap: False # True False
-is_shap_save: False
+is_shap: True # True False
+is_shap_save: True
 shap_explainer: Tree # Tree Kernel Deep
 shap_bkgrd: tree_path_dependent # trn all tree_path_dependent
 

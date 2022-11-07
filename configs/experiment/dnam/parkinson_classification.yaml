@@ -17,9 +17,7 @@
 # pytorch_tabular_autoint (pytorch)
 # pytorch_tabular_tabnet (pytorch)
 # pytorch_tabular_node (pytorch)
-# pytorch_tabular_category_embedding (pytorch)
 # pytorch_tabular_ft_transformer (pytorch)
-# pytorch_tabular_tab_transformer (pytorch)
 # nbm_spam_spam (pytorch)
 # nbm_spam_nam (pytorch)
 # nbm_spam_nbm (pytorch)
@@ -61,7 +59,7 @@ test_after_training: True
 max_epochs: 1000
 patience: 100
 
-base_dir: "${hydra:runtime.cwd}/data/${data_type}/${disease}"
+base_dir: "${hydra:runtime.cwd}/data/${data_type}/parkinson_classification"
 data_dir: "${base_dir}"
 work_dir: "${base_dir}/models/${project_name}"
 

@@ -61,7 +61,7 @@ test_after_training: True
 max_epochs: 1000
 patience: 100
 
-base_dir: "${hydra:runtime.cwd}/data/${data_type}/${disease}"
+base_dir: "${hydra:runtime.cwd}/data/${data_type}/schizophrenia_classification"
 data_dir: "${base_dir}"
 work_dir: "${base_dir}/models/${project_name}"
 

@@ -188,6 +188,12 @@ class TabularDataModule(LightningDataModule):
             target=self.target
         )
 
+        log.info(f"Number of samples: {len(self.dataset)}")
+        log.info(f"Number of continuous features: {len(self.feats_con_ids)}")
+        log.info(f"Number of categorical features: {len(self.feats_cat_ids)}")
+        log.info(f"Target feature: {self.target}")
+        log.info(f"Target task: {self.task}")
+
     def prepare_data(self):
         pass
 

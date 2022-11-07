@@ -31,10 +31,6 @@ def get_model_framework_dict():
         "pytorch_tabular_category_embedding": "pytorch",
         "pytorch_tabular_ft_transformer": "pytorch",
         "pytorch_tabular_tab_transformer": "pytorch",
-        "nbm_spam_spam": "pytorch",
-        "nbm_spam_nam": "pytorch",
-        "nbm_spam_nbm": "pytorch",
-        "arm_net_models": "pytorch",
         "danet": "pytorch",
         "nam": "pytorch",
     }
