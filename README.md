@@ -246,17 +246,20 @@ nam:
         └── nam.yaml
 ```
 
-В каждом конфигурационном файле задаются параметры [OptunaSweeper](https://hydra.cc/docs/plugins/optuna_sweeper/), осуществляющего перебор параметров модели, указанных в блоке `hydra.sweeper.params`:
+В каждом конфигурационном файле необходимо задать целевую оптимизационную метрику, а также параметры [OptunaSweeper](https://hydra.cc/docs/plugins/optuna_sweeper/), осуществляющего перебор параметров модели, указанных в блоке `hydra.sweeper.params`:
 ```yaml
+optimized_metric: <метрика>   # All metrics listed in src.tasks.metrics.
+optimized_mean: <усреднение>  # Optimize mean result across all cross-validation splits? Options: ["", "cv_mean"].
+direction: <min or max>       # Direction of metrics optimization. Options ["min", "max"].
 hydra:
   sweeper:
+    irection: <minimize or maximize> # 'minimize' or 'maximize' the objective.
     ...
     params:
       <модель>.<параметр_1>: <варьируемый диапазон параметра_1>
       ...
       <модель>.<параметр_n>: <варьируемый диапазон параметра_n>
 ```
-
 
 ## Запуск экспериментов
 
