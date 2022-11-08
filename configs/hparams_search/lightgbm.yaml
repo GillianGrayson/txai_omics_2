@@ -1,19 +1,15 @@
 # @package _global_
 
-# example hyperparameter optimization of some experiment with Optuna:
-# python train.py -m hparams_search=mnist_optuna experiment=example
-
 defaults:
   - override /hydra/sweeper: optuna
 
 # choose metric which will be optimized by Optuna
-# make sure this is the correct name of some metric logged in lightning module!
 optimized_metric: "mean_absolute_error"
-optimized_mean: "cv_mean_val_tst" # "cv_mean"
+optimized_mean: "cv_mean"
 
 # here we define Optuna hyperparameter search
 # it optimizes for value returned from function with @hydra.main decorator
-# docs: https://hydra.cc/docs/next/plugins/optuna_sweeper
+# docs: https://hydra.cc/docs/plugins/optuna_sweeper/
 hydra:
   sweeper:
     _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
@@ -35,7 +31,7 @@ hydra:
     n_trials: 1000
 
     # choose Optuna hyperparameter sampler
-    # docs: https://optuna.readthedocs.io/en/stable/reference/samplers.html
+    # docs: https://optuna.readthedocs.io/en/stable/reference/samplers/index.html
     sampler:
       _target_: optuna.samplers.TPESampler
       seed: ${seed}
@@ -51,7 +47,7 @@ hydra:
     # define range of hyperparameters
     params:
       lightgbm.learning_rate: tag(log, interval(0.00001, 1))
-      lightgbm.num_leaves: int(range(10, 100, step=1)) #choice(31)
+      lightgbm.num_leaves: int(range(10, 100, step=1))
       lightgbm.min_data_in_leaf: int(range(1, 50, step=1))
       lightgbm.feature_fraction: interval(0.6, 1.0)
       lightgbm.bagging_fraction: interval(0.6, 1.0)
