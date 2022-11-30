@@ -54,7 +54,7 @@ test_after_training: True # Test after training?
 
 # Directories and files params
 project_name: ${model_type}
-base_dir: "${hydra:runtime.cwd}/data/${data_type}/age_regression"
+base_dir: "${oc.env:PROJECT_ROOT}/data/${data_type}/age_regression"
 data_dir: "${base_dir}"
 work_dir: "${base_dir}/models/${project_name}"
 

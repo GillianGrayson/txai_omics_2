@@ -41,3 +41,4 @@ impyute>=0.0.8
 # --------- others --------- #
 python-dotenv>=0.21.0   # loading env variables from .env file
 rich>=12.6.0            # beautiful text formatting in terminal
+pyrootutils==1.0.4      # for getting root
