@@ -28,7 +28,10 @@ def explain_samples(config, y_real, y_pred, indexes, shap_values, base_value, fe
         diff = y_diff[m_id]
         log.info(f"Plotting sample {m_id}: {indexes[m_id]} (real = {y_real[m_id]:0.4f}, estimated = {y_pred[m_id]:0.4f}) with diff = {diff:0.4f}")
 
-        ind_save = indexes[m_id].replace('/', '_')
+        if isinstance(indexes[m_id], str):
+            ind_save = indexes[m_id].replace('/', '_')
+        else:
+            ind_save = indexes[m_id]
         Path(f"{path}/{ind_save}_{diff:0.4f}").mkdir(parents=True, exist_ok=True)
 
         shap.plots.waterfall(
